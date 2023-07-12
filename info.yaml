@@ -21,39 +21,70 @@ yaml_version: 4
 #
 # Here is a great example: https://github.com/davidsiaw/tt02-davidsiaw-stackcalc/blob/38c5647f83aad2aec675d566aa3d67b98f0aac81/info.yaml
 documentation: 
-  author:       ""      # Your name
-  title:        ""      # Project title
+  author:       "José Valentín Restrepo"      # Your name
+  tag:          "State Machines, controller"
+  title:        "EVSE sequence follower"      # Project title
   language:     "Wokwi" # other examples include Verilog, Amaranth, VHDL, etc
-  description:  ""      # Short description of what your project does
+  clock_hz:     "100 Hz for the ext-clock"
+  description:  "This is a state machine that follows the step signals of a EVSE. SP: Esta es una maquina de estados que sigue la señal escalon de una estacion de carga."      # Short description of what your project does
 
 # Longer description of how the project works. You can use standard markdown format.
   how_it_works: |
-      Explain how your project works
+      This project simulates the control pilot signal of a EVSE. More info in: https://openev.freshdesk.com/support/solutions/articles/6000052074-basics-of-sae-j1772
+      This signal has 6 states represented in a voltage level of a periodic signal. Only five of them are implemented here. Voltage convertion its also not implemented. 
+      A state machine was build according to this specification.  The five states were numbered:
+      000 State A
+      001 State B
+      011 State C
+      110 State D 
+      111 Error
+
+      its only posible to go from state A to state B
+      From state B, its posible to go to states A,C or D.
+      From state C, its posible to go to states A,B or D
+      From state D, its posible to go to states A,B or C
+
+      if a wrong entry is detect in any state, the machine inmediately jumps to state Error.
+
+      Inputs are in the form of (I4 I3 I2 I1) 1111,0111,0011,0001 which should represent the A,B,C,D conditions of the input signal in an EVSE (CP) (12, 9, 6 and 3). Other conditions are considered invalid signals.
+
+      
 
 # Instructions on how someone could test your project, include things like what buttons do what and how to set the clock if needed
   how_to_test:  |
-      Explain how to test your project
-
+      1. Power UP. Put the signals I1,I2,I3,I4,I6,I8 in high.
+      2. Reset (active low)
+      3. State should be state A after reset. Idle indication is ON. 
+      4. With I8 in High, reset I4. State should change to B. Idle indicator turns off, active indicator turns on. Station On is turned ON.
+      5. Reset I8.
+      6. Reset I3.
+      7. Make a pulse with I8. State should change to state C. Charging is activated.
+      8. Reset I2.
+      9. Make a pulse with I8. Nothing changes, still charging.
+      10. Set I2 and I3.
+      11. Make a pulse with I8. Charging is off bit station still active.
+      12. Set I4. Set I8. Cahrging is off. Stations is not active. station is IDLE.
+      
 # A description of what the inputs do (e.g. red button, SPI CLK, SPI MOSI, etc).
   inputs:               
+    - I1 - LEVEL D
+    - I2 - LEVEL C
+    - I3 - LEVEL B
+    - I4 - LEVEL A
     - none
+    - I6 - EXT RESET
     - none
-    - none
-    - none
-    - none
-    - none
-    - none
-    - none
+    - I8 - EXT 1kHz Clock
 # A description of what the outputs do (e.g. status LED, SPI MISO, etc)
   outputs:
-    - segment a
-    - segment b
-    - segment c
-    - segment d
-    - segment e
-    - segment f
-    - segment g
-    - dot
+    - segment a: Station ON
+    - segment b: Vehicle Charging
+    - segment c: State Variable bit - S2
+    - segment d: State Variable bit - S1
+    - segment e: State Variable bit - S0
+    - segment f: N/A
+    - segment g: Operating
+    - dot: Idle
 # A description of what the bidirectional I/O pins do (e.g. I2C SDA, I2C SCL, etc)
   bidirectional:
     - none
